@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ROI / TCO Calculator</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#101b33;
+      --muted:#98a2b3;
+      --text:#eef2ff;
+      --accent:#6ee7b7;
+      --danger:#fb7185;
+      --warn:#fbbf24;
+      --line:#24314f;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(900px 500px at 80% 0%, #1b2b5a 0%, var(--bg) 60%);
+      color:var(--text);
+    }
+    .wrap{max-width:1050px;margin:0 auto;padding:24px}
+    h1{margin:0 0 8px;font-size:28px;letter-spacing:0.2px}
+    .sub{color:var(--muted);margin:0 0 20px;line-height:1.4}
+    .grid{
+      display:grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 900px){
+      .grid{grid-template-columns:1fr}
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:18px;
+      padding:16px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.28);
+    }
+    .card h2{margin:0 0 12px;font-size:18px}
+    .sectionTitle{
+      display:flex;justify-content:space-between;align-items:center;
+      margin:10px 0 8px;
+      padding-top:10px;
+      border-top:1px dashed rgba(255,255,255,0.12);
+      color:#dbeafe;
+      font-size:14px;
+    }
+    .field{padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+    .field:last-child{border-bottom:none}
+    label{display:block;font-size:13px;color:#dbeafe;margin-bottom:8px}
+    .row{display:flex;gap:10px;align-items:center}
+    input[type="number"], select{
+      width:100%;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+      color:var(--text);
+      border-radius:12px;
+      padding:10px 12px;
+      font-size:14px;
+      outline:none;
+    }
+    input[type="range"]{width:100%}
+    .hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.35}
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 10px;border-radius:999px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.08);
+      font-size:12px;color:#e5e7eb;
+    }
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    button{
+      border:none;border-radius:14px;
+      padding:12px 14px;
+      font-weight:700;
+      cursor:pointer;
+      color:#071018;
+      background: linear-gradient(135deg, var(--accent), #60a5fa);
+    }
+    button.secondary{
+      color:var(--text);
+      background: rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+      font-weight:600;
+    }
+    .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .kpi{
+      padding:12px;border-radius:16px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+    }
+    .kpi .t{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .kpi .v{font-size:20px;font-weight:800;letter-spacing:0.2px}
+    .good{color:var(--accent)}
+    .bad{color:var(--danger)}
+    .warn{color:var(--warn)}
+    .bigLine{
+      margin-top:12px;
+      padding:12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(110,231,183,0.10);
+      line-height:1.45;
+    }
+    canvas{width:100%;height:240px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px}
+    .mini{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.45}
+    .textarea{
+      width:100%;
+      min-height:120px;
+      resize:vertical;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+      color:var(--text);
+      border-radius:12px;
+      padding:10px 12px;
+      font-size:13px;
+      outline:none;
+      line-height:1.45;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>מחשבון ROI + TCO שמוכר בשבילך</h1>
+    <p class="sub">
+      המטרה: להוכיח שממשיך עם המצב הקיים עולה יותר מהשדרוג.
+      זה מחשב דימום (Cost of Inaction), חיסכון, Upside, Payback, ו ROI ל 3 שנים.
+    </p>
+
+    <div class="grid">
+      <div class="card">
+        <h2>קלטים</h2>
+
+        <div class="row" style="justify-content:space-between;margin-bottom:12px;gap:12px;flex-wrap:wrap">
+          <span class="pill">מצב: <b id="modeLabel">Expected</b></span>
+          <span class="pill">מטבע: 
+            <select id="currency" style="width:auto;padding:8px 10px">
+              <option value="$">$</option>
+              <option value="€">€</option>
+              <option value="₪">₪</option>
+            </select>
+          </span>
+          <span class="pill">אופק: 
+            <select id="years" style="width:auto;padding:8px 10px">
+              <option value="3">3 שנים</option>
+              <option value="5">5 שנים</option>
+            </select>
+          </span>
+        </div>
+
+        <div class="field">
+          <label>בחר מצב חישוב (שמרני, צפוי, אגרסיבי)</label>
+          <div class="row">
+            <select id="mode">
+              <option value="conservative">Conservative</option>
+              <option value="expected" selected>Expected</option>
+              <option value="aggressive">Aggressive</option>
+            </select>
+          </div>
+          <div class="hint">מצב משנה מכפילים קטנים (למשל תפוקה, חיסכון). בשיחה: תתחיל שמרני, תעלה רק אם צריך.</div>
+        </div>
+
+        <div class="sectionTitle">
+          <span>דימום נוכחי (חובה)</span>
+          <span class="pill">Bleeding</span>
+        </div>
+
+        <div class="field">
+          <label>עלות שעה מושבתת</label>
+          <div class="row">
+            <input type="range" id="hourlyCostR" min="0" max="1500" step="10" value="200" />
+            <input type="number" id="hourlyCost" min="0" step="10" value="200" />
+          </div>
+          <div class="hint">תכלס: כמה שווה לך שעה שהקו לא מייצר או שמישהו מכבה שריפות.</div>
+        </div>
+
+        <div class="field">
+          <label>שעות השבתה בחודש</label>
+          <div class="row">
+            <input type="range" id="downtimeHoursR" min="0" max="60" step="1" value="6" />
+            <input type="number" id="downtimeHours" min="0" step="1" value="6" />
+          </div>
+          <div class="hint">אל תתווכח. תן להם להכניס “מה שנראה להם”, ואז תראה את המחיר של זה.</div>
+        </div>
+
+        <div class="field">
+          <label>עלות תיקונים, חלפים, טכנאים בחודש</label>
+          <div class="row">
+            <input type="range" id="maintenanceCostR" min="0" max="20000" step="50" value="600" />
+            <input type="number" id="maintenanceCost" min="0" step="50" value="600" />
+          </div>
+          <div class="hint">אם יש להם חוזה שירות, שים פה את ההפרש מול החדש או השאר 0 ותעבור לסעיף השירות.</div>
+        </div>
+
+        <div class="field">
+          <label>עלות פסילות וריוורק בחודש</label>
+          <div class="row">
+            <input type="range" id="scrapCostR" min="0" max="30000" step="100" value="800" />
+            <input type="number" id="scrapCost" min="0" step="100" value="800" />
+          </div>
+          <div class="hint">אם הם לא יודעים, תן הערכה. גם מספר קטן עושה קסם כשזה מצטבר לשנים.</div>
+        </div>
+
+        <div class="sectionTitle">
+          <span>המערכת החדשה</span>
+          <span class="pill">New system</span>
+        </div>
+
+        <div class="field">
+          <label>מחיר מערכת חדשה (אחרי טרייד אין, הנחות, הכול)</label>
+          <div class="row">
+            <input type="number" id="newSystemPrice" min="0" step="100" value="15000" />
+          </div>
+          <div class="hint">תמיד לעבוד “אחרי” הזיכוי כדי שהמספר לא יראה מפלצתי.</div>
+        </div>
+
+        <div class="field">
+          <label>עלות תפעול חודשית של המערכת החדשה (שירות, חומרים, אנרגיה) (אופציונלי)</label>
+          <div class="row">
+            <input type="range" id="newMonthlyOpsR" min="0" max="20000" step="50" value="0" />
+            <input type="number" id="newMonthlyOps" min="0" step="50" value="0" />
+          </div>
+          <div class="hint">אם אין לך נתון, תשאיר 0. אם יש חוזה שירות חדש, תכניס פה את העלות החודשית שלו.</div>
+        </div>
+
+        <div class="sectionTitle">
+          <span>Upside (הכנסות ותפוקה)</span>
+          <span class="pill">Growth</span>
+        </div>
+
+        <div class="field">
+          <label>שיפור נטו בחודש (רווח גולמי נוסף) בגלל תפוקה, פחות פסילות, עבודות שלא נכנסות כיום</label>
+          <div class="row">
+            <input type="range" id="monthlyUpsideR" min="0" max="50000" step="100" value="1000" />
+            <input type="number" id="monthlyUpside" min="0" step="100" value="1000" />
+          </div>
+          <div class="hint">שמור על זה שמרני. אם הלקוח סקפטי, תוריד לאפס ותסגור רק על Bleeding.</div>
+        </div>
+
+        <div class="actions">
+          <button id="calcBtn">חשב עכשיו</button>
+          <button class="secondary" id="resetBtn">איפוס</button>
+          <button class="secondary" id="copyBtn">העתק סיכום לוואטסאפ</button>
+          <button class="secondary" id="printBtn">הדפס דוח</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>תוצאות</h2>
+
+        <div class="kpis">
+          <div class="kpi">
+            <div class="t">דימום שנתי היום</div>
+            <div class="v bad" id="annualBleed">-</div>
+          </div>
+          <div class="kpi">
+            <div class="t">כמה עולה כל חודש שאתה מחכה</div>
+            <div class="v bad" id="monthlyBleed">-</div>
+          </div>
+          <div class="kpi">
+            <div class="t">Payback (חודשים)</div>
+            <div class="v good" id="payback">-</div>
+          </div>
+          <div class="kpi">
+            <div class="t">ROI לתקופה</div>
+            <div class="v good" id="roiPeriod">-</div>
+          </div>
+        </div>
+
+        <div class="bigLine" id="bottomLine">
+          הכנס נתונים ולחץ חשב.
+        </div>
+
+        <div style="margin-top:12px">
+          <canvas id="chart" width="900" height="320"></canvas>
+          <div class="mini">
+            הגרף משווה עלות כוללת בתקופה: מצב קיים מול שדרוג (כולל Upside אם הוזן).
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <label style="display:block;margin:0 0 8px;color:#dbeafe;font-size:13px">סיכום לשליחה ללקוח</label>
+          <textarea class="textarea" id="summary" readonly></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const fmt = (n, cur) => {
+      if (!isFinite(n)) return "-";
+      const sign = n < 0 ? "-" : "";
+      const abs = Math.abs(n);
+      return sign + cur + abs.toLocaleString(undefined, { maximumFractionDigits: 0 });
+    };
+
+    const modeMultipliers = {
+      conservative: { bleed: 0.9, upside: 0.6 },
+      expected:     { bleed: 1.0, upside: 1.0 },
+      aggressive:   { bleed: 1.1, upside: 1.4 }
+    };
+
+    const els = {
+      mode: document.getElementById("mode"),
+      modeLabel: document.getElementById("modeLabel"),
+      currency: document.getElementById("currency"),
+      years: document.getElementById("years"),
+
+      hourlyCost: document.getElementById("hourlyCost"),
+      hourlyCostR: document.getElementById("hourlyCostR"),
+      downtimeHours: document.getElementById("downtimeHours"),
+      downtimeHoursR: document.getElementById("downtimeHoursR"),
+      maintenanceCost: document.getElementById("maintenanceCost"),
+      maintenanceCostR: document.getElementById("maintenanceCostR"),
+      scrapCost: document.getElementById("scrapCost"),
+      scrapCostR: document.getElementById("scrapCostR"),
+
+      newSystemPrice: document.getElementById("newSystemPrice"),
+      newMonthlyOps: document.getElementById("newMonthlyOps"),
+      newMonthlyOpsR: document.getElementById("newMonthlyOpsR"),
+
+      monthlyUpside: document.getElementById("monthlyUpside"),
+      monthlyUpsideR: document.getElementById("monthlyUpsideR"),
+
+      annualBleed: document.getElementById("annualBleed"),
+      monthlyBleed: document.getElementById("monthlyBleed"),
+      payback: document.getElementById("payback"),
+      roiPeriod: document.getElementById("roiPeriod"),
+      bottomLine: document.getElementById("bottomLine"),
+      summary: document.getElementById("summary"),
+
+      chart: document.getElementById("chart"),
+      calcBtn: document.getElementById("calcBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      copyBtn: document.getElementById("copyBtn"),
+      printBtn: document.getElementById("printBtn"),
+    };
+
+    function sync(rangeEl, numberEl){
+      rangeEl.addEventListener("input", () => numberEl.value = rangeEl.value);
+      numberEl.addEventListener("input", () => rangeEl.value = numberEl.value || 0);
+    }
+    sync(els.hourlyCostR, els.hourlyCost);
+    sync(els.downtimeHoursR, els.downtimeHours);
+    sync(els.maintenanceCostR, els.maintenanceCost);
+    sync(els.scrapCostR, els.scrapCost);
+    sync(els.newMonthlyOpsR, els.newMonthlyOps);
+    sync(els.monthlyUpsideR, els.monthlyUpside);
+
+    els.mode.addEventListener("change", () => {
+      els.modeLabel.textContent = els.mode.value[0].toUpperCase() + els.mode.value.slice(1);
+    });
+
+    function drawBars(labels, values, cur){
+      const c = els.chart;
+      const ctx = c.getContext("2d");
+      const w = c.width, h = c.height;
+
+      ctx.clearRect(0,0,w,h);
+
+      const pad = 38;
+      const max = Math.max(...values, 1);
+      const barW = 180;
+      const gap = 90;
+
+      // axis
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = "rgba(255,255,255,0.18)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad, h - pad);
+      ctx.lineTo(w - pad, h - pad);
+      ctx.stroke();
+
+      // grid lines
+      ctx.strokeStyle = "rgba(255,255,255,0.10)";
+      for(let i=1;i<=3;i++){
+        const y = (h - pad) - ( (h - 2*pad) * (i/3) );
+        ctx.beginPath();
+        ctx.moveTo(pad, y);
+        ctx.lineTo(w - pad, y);
+        ctx.stroke();
+      }
+
+      // bars
+      for(let i=0;i<values.length;i++){
+        const x = pad + 120 + i*(barW+gap);
+        const bh = ((h - 2*pad) * (values[i]/max));
+        const y = (h - pad) - bh;
+
+        // color by index (0 bad, 1 good)
+        ctx.fillStyle = i === 0 ? "rgba(251,113,133,0.85)" : "rgba(110,231,183,0.85)";
+        ctx.fillRect(x, y, barW, bh);
+
+        // label
+        ctx.fillStyle = "rgba(238,242,255,0.92)";
+        ctx.font = "bold 16px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText(labels[i], x + barW/2, h - 12);
+
+        // value
+        ctx.font = "bold 18px system-ui";
+        ctx.fillText(fmt(values[i], cur), x + barW/2, y - 10);
+      }
+    }
+
+    function calculate(){
+      const cur = els.currency.value;
+      const years = parseInt(els.years.value, 10);
+
+      const hourly = Math.max(0, parseFloat(els.hourlyCost.value) || 0);
+      const hours  = Math.max(0, parseFloat(els.downtimeHours.value) || 0);
+      const maint  = Math.max(0, parseFloat(els.maintenanceCost.value) || 0);
+      const scrap  = Math.max(0, parseFloat(els.scrapCost.value) || 0);
+
+      const price  = Math.max(0, parseFloat(els.newSystemPrice.value) || 0);
+      const newOps = Math.max(0, parseFloat(els.newMonthlyOps.value) || 0);
+
+      const upsideInput = Math.max(0, parseFloat(els.monthlyUpside.value) || 0);
+
+      const m = modeMultipliers[els.mode.value] || modeMultipliers.expected;
+
+      // monthly bleed today
+      const monthlyBleedRaw = (hourly * hours) + maint + scrap;
+      const monthlyBleed = monthlyBleedRaw * m.bleed;
+      const annualBleed = monthlyBleed * 12;
+
+      // "with new system" monthly delta:
+      // you remove bleed, but you add new monthly ops.
+      // plus upside is added as extra profit.
+      const monthlyNetBenefit = Math.max(0, (monthlyBleed - newOps) + (upsideInput * m.upside));
+
+      // payback in months
+      const paybackMonths = monthlyNetBenefit > 0 ? (price / monthlyNetBenefit) : Infinity;
+
+      // period ROI
+      const periodMonths = years * 12;
+      const totalBenefit = monthlyNetBenefit * periodMonths;
+      const roi = price > 0 ? ((totalBenefit - price) / price) : Infinity;
+
+      // Cost of inaction for period (simple): bleed over period
+      const tcoCurrent = monthlyBleed * periodMonths;
+      // New scenario: price + newOps over period - upside over period (as reduction in cost)
+      const tcoNew = price + (newOps * periodMonths) - ((upsideInput * m.upside) * periodMonths);
+      const savings = tcoCurrent - tcoNew;
+
+      // UI
+      els.annualBleed.textContent = fmt(annualBleed, cur);
+      els.monthlyBleed.textContent = fmt(monthlyBleed, cur);
+
+      if (isFinite(paybackMonths)) {
+        els.payback.textContent = paybackMonths.toFixed(1);
+      } else {
+        els.payback.textContent = "לא מחושב";
+      }
+
+      if (isFinite(roi)) {
+        els.roiPeriod.textContent = Math.round(roi * 100) + "%";
+      } else {
+        els.roiPeriod.textContent = "לא מחושב";
+      }
+
+      const paybackTxt = isFinite(paybackMonths) ? `${paybackMonths.toFixed(1)} חודשים` : "לא ניתן לחישוב (תועלת חודשית אפס)";
+      const savingsTxt = fmt(savings, cur);
+
+      // Bottom line copy
+      els.bottomLine.innerHTML =
+        `השורה התחתונה: אתה שורף <b class="bad">${fmt(monthlyBleed, cur)}</b> כל חודש במצב הקיים.
+         בשדרוג, לפי הנתונים פה, ההשקעה חוזרת תוך <b class="good">${paybackTxt}</b>.
+         החיסכון נטו ל ${years} שנים הוא <b class="good">${savingsTxt}</b>.`;
+
+      // Chart
+      drawBars(
+        ["עלות כוללת מצב קיים", "עלות כוללת עם שדרוג"],
+        [Math.max(0, tcoCurrent), Math.max(0, tcoNew)],
+        cur
+      );
+
+      // Summary text
+      const summary =
+`סיכום ROI (מצב: ${els.modeLabel.textContent}, אופק: ${years} שנים)
+1) דימום חודשי כיום: ${fmt(monthlyBleed, cur)}
+2) דימום שנתי כיום: ${fmt(annualBleed, cur)}
+3) השקעה מערכת חדשה: ${fmt(price, cur)}
+4) עלות תפעול חודשית חדשה: ${fmt(newOps, cur)}
+5) Upside חודשי (רווח נוסף): ${fmt(upsideInput * m.upside, cur)}
+
+תוצאה:
+- זמן החזר השקעה: ${paybackTxt}
+- חיסכון נטו ל ${years} שנים: ${savingsTxt}
+- ROI לתקופה: ${isFinite(roi) ? Math.round(roi*100) + "%" : "לא מחושב"}
+
+משפט סגירה:
+כל חודש המתנה עולה בערך ${fmt(monthlyBleed, cur)}.`;
+      els.summary.value = summary;
+    }
+
+    function reset(){
+      els.mode.value = "expected";
+      els.modeLabel.textContent = "Expected";
+      els.currency.value = "$";
+      els.years.value = "3";
+
+      els.hourlyCost.value = 200; els.hourlyCostR.value = 200;
+      els.downtimeHours.value = 6; els.downtimeHoursR.value = 6;
+      els.maintenanceCost.value = 600; els.maintenanceCostR.value = 600;
+      els.scrapCost.value = 800; els.scrapCostR.value = 800;
+
+      els.newSystemPrice.value = 15000;
+      els.newMonthlyOps.value = 0; els.newMonthlyOpsR.value = 0;
+      els.monthlyUpside.value = 1000; els.monthlyUpsideR.value = 1000;
+
+      els.annualBleed.textContent = "-";
+      els.monthlyBleed.textContent = "-";
+      els.payback.textContent = "-";
+      els.roiPeriod.textContent = "-";
+      els.bottomLine.textContent = "הכנס נתונים ולחץ חשב.";
+      els.summary.value = "";
+
+      const ctx = els.chart.getContext("2d");
+      ctx.clearRect(0,0,els.chart.width, els.chart.height);
+    }
+
+    els.calcBtn.addEventListener("click", calculate);
+    els.resetBtn.addEventListener("click", reset);
+    els.copyBtn.addEventListener("click", async () => {
+      if (!els.summary.value.trim()) calculate();
+      try{
+        await navigator.clipboard.writeText(els.summary.value);
+        els.copyBtn.textContent = "הועתק";
+        setTimeout(()=> els.copyBtn.textContent = "העתק סיכום לוואטסאפ", 900);
+      }catch(e){
+        alert("לא הצלחתי להעתיק, תעתיק ידנית מהתיבה.");
+      }
+    });
+    els.printBtn.addEventListener("click", () => window.print());
+
+    // start clean
+    reset();
+  </script>
+</body>
+</html>
