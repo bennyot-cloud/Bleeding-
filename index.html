@@ -1,560 +1,339 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Next-Gen Upgrade ROI Calculator</title>
-  <style>
-    :root{
-      --bg:#070b16;
-      --panel:#0e1730;
-      --panel2:#0b1329;
-      --text:#eaf0ff;
-      --muted:#9aa7c3;
-      --line:#243055;
-      --good:#2ee59d;
-      --bad:#ff5a7a;
-      --warn:#ffcc4d;
-      --blue:#60a5fa;
-      --chip:rgba(255,255,255,.06);
-      --chipb:rgba(255,255,255,.10);
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: radial-gradient(900px 500px at 75% 0%, #1b2b5a 0%, var(--bg) 62%);
-      color:var(--text);
-    }
-    .wrap{max-width:1200px;margin:0 auto;padding:18px}
-    h1{margin:0 0 6px;font-size:22px}
-    .sub{margin:0 0 14px;color:var(--muted);line-height:1.45}
-    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;align-items:start}
-    @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
-      border:1px solid rgba(255,255,255,.09);
-      border-radius:18px;
-      padding:14px;
-      box-shadow: 0 14px 34px rgba(0,0,0,.30);
-    }
-    .topRow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:10px}
-    .pill{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:8px 10px;border-radius:999px;
-      background:var(--chip);
-      border:1px solid var(--chipb);
-      color:#e5e7eb;font-size:12px
-    }
-    .row{display:flex;gap:10px;align-items:center}
-    input[type="number"], select, textarea{
-      width:100%;
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.10);
-      color:var(--text);
-      border-radius:12px;
-      padding:10px 12px;
-      font-size:14px;
-      outline:none;
-    }
-    input[type="range"]{width:100%}
-    textarea{min-height:150px;resize:vertical;line-height:1.45}
-    h2{margin:0 0 10px;font-size:15px;color:#dbeafe}
-    .secTitle{
-      display:flex;justify-content:space-between;align-items:center;
-      margin:10px 0 6px;padding-top:10px;
-      border-top:1px dashed rgba(255,255,255,.12);
-      color:#dbeafe;font-size:13px
-    }
-    .tag{font-size:11px;color:#cfe4ff;border:1px solid rgba(96,165,250,.35);background:rgba(96,165,250,.12);padding:6px 8px;border-radius:999px}
-    .tag.hard{border-color:rgba(46,229,157,.35);background:rgba(46,229,157,.10)}
-    .tag.assume{border-color:rgba(255,204,77,.35);background:rgba(255,204,77,.10);color:#ffe9b0}
-    .field{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
-    .field:last-child{border-bottom:none}
-    label{display:block;font-size:12.5px;color:#dbeafe;margin-bottom:8px}
-    .hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.35}
-    .tog{display:flex;align-items:center;gap:10px}
-    .tog input{transform:scale(1.1)}
-    .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .kpi{
-      padding:12px;border-radius:16px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.04);
-    }
-    .kpi .t{font-size:12px;color:var(--muted);margin-bottom:6px}
-    .kpi .v{font-size:20px;font-weight:860}
-    .good{color:var(--good)}
-    .bad{color:var(--bad)}
-    .warn{color:var(--warn)}
-    .blue{color:var(--blue)}
-    .bigLine{
-      margin-top:10px;
-      padding:12px;
-      border-radius:16px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(46,229,157,.10);
-      line-height:1.45;
-    }
-    .modules{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-    @media (max-width: 980px){ .modules{grid-template-columns:1fr} }
-    .mod{
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:16px;
-      padding:10px;
-    }
-    .modHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
-    .modTitle{font-weight:750}
-    .modMeta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    .chip{
-      font-size:11px;
-      padding:6px 8px;border-radius:999px;
-      background:var(--chip);
-      border:1px solid var(--chipb);
-      color:#e5e7eb;
-    }
-    .bdRow{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid rgba(255,255,255,.06)}
-    .bdRow span{color:var(--muted);font-size:12px}
-    .bdRow b{font-size:12px}
-    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-    button{
-      border:none;border-radius:14px;
-      padding:12px 14px;
-      font-weight:760;
-      cursor:pointer;
-      color:#071018;
-      background: linear-gradient(135deg, var(--good), var(--blue));
-    }
-    button.secondary{
-      color:var(--text);
-      background: rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.10);
-      font-weight:650;
-    }
-    .hidden{display:none !important}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVT Value Calculator</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #3b82f6;
+            --danger: #ef4444;
+            --success: #10b981;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #334155;
+            --text-light: #64748b;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px -5px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        /* Inputs Panel */
+        .inputs-panel {
+            padding: 30px;
+            border-right: 1px solid #e2e8f0;
+            background: #fff;
+            overflow-y: auto;
+        }
+
+        h2 { margin: 0 0 10px 0; color: var(--primary); font-size: 22px; }
+        .subtitle { color: var(--text-light); font-size: 14px; margin-bottom: 25px; display: block;}
+
+        .section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            color: var(--accent);
+            margin: 25px 0 15px 0;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 5px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+        .input-wrapper span {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 10px 10px 25px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            box-sizing: border-box;
+            transition: 0.2s;
+        }
+        input:focus { outline: none; border-color: var(--accent); background: #f8fafc; }
+
+        /* Visuals Panel */
+        .visuals-panel {
+            padding: 30px;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Top Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .kpi-label { font-size: 11px; color: var(--text-light); font-weight: 600; text-transform: uppercase; }
+        .kpi-value { font-size: 24px; font-weight: 800; margin-top: 5px; }
+        .kpi-value.red { color: var(--danger); }
+        .kpi-value.blue { color: var(--accent); }
+
+        /* Main Bar Chart */
+        .chart-box {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .bar-group { margin-bottom: 20px; }
+        .bar-label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+        .bar-track { height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }
+        .bar-fill { height: 100%; width: 0%; transition: width 1s; border-radius: 5px; }
+        .bg-red { background: var(--danger); }
+        .bg-blue { background: var(--accent); }
+
+        /* The Killer ROI Section */
+        .roi-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            margin-top: auto;
+        }
+        
+        .roi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .roi-title { font-size: 14px; font-weight: 700; color: var(--success); }
+
+        .roi-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .roi-metric div:first-child { font-size: 12px; color: var(--text-light); margin-bottom: 4px; }
+        .roi-metric div:last-child { font-size: 20px; font-weight: 800; color: var(--text-main); }
+
+        @media (max-width: 900px) { .dashboard { grid-template-columns: 1fr; } }
+    </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Next-Gen Upgrade ROI (Portfolio Model)</h1>
-    <p class="sub">
-      Upgrade from legacy to new: quantify the cost of inaction across multiple ROI engines (service, downtime, waste, overprint, reprints, capacity).
-      Toggle modules on/off. Separate hard data from assumptions. Produce a CFO-ready summary.
-    </p>
 
-    <div class="grid">
-      <!-- INPUTS -->
-      <div class="card">
-        <div class="topRow">
-          <span class="pill">View:
-            <select id="view" style="width:auto;padding:8px 10px">
-              <option value="cfo" selected>CFO view</option>
-              <option value="plant">Plant view</option>
-              <option value="service">Service view</option>
-              <option value="full">Full view</option>
-            </select>
-          </span>
-          <span class="pill">Currency:
-            <select id="currency" style="width:auto;padding:8px 10px">
-              <option value="$">$</option>
-              <option value="€">€</option>
-              <option value="₪">₪</option>
-            </select>
-          </span>
-          <span class="pill">Horizon:
-            <select id="years" style="width:auto;padding:8px 10px">
-              <option value="3">3 years</option>
-              <option value="5" selected>5 years</option>
-            </select>
-          </span>
+<div class="dashboard">
+    <div class="inputs-panel">
+        <h2>ROI & Cost of Inaction</h2>
+        <span class="subtitle">Validate the business case for upgrading.</span>
+
+        <div class="section-title">1. Operational Pain (Annual)</div>
+        <div class="input-row">
+            <div class="input-group">
+                <label>Service Calls / Year</label>
+                <div class="input-wrapper"><span>#</span><input type="number" id="calls" value="12" oninput="calc()"></div>
+            </div>
+            <div class="input-group">
+                <label>Avg Cost per Call</label>
+                <div class="input-wrapper"><span>$</span><input type="number" id="callCost" value="800" oninput="calc()"></div>
+            </div>
+        </div>
+        <div class="input-row">
+            <div class="input-group">
+                <label>Unplanned Downtime (Hrs/Mo)</label>
+                <div class="input-wrapper"><span>H</span><input type="number" id="downHrs" value="4" oninput="calc()"></div>
+            </div>
+            <div class="input-group">
+                <label>Cost per Hour</label>
+                <div class="input-wrapper"><span>$</span><input type="number" id="hrCost" value="250" oninput="calc()"></div>
+            </div>
         </div>
 
-        <h2>Investment</h2>
-        <div class="field">
-          <label>Total upgrade cost (after trade-in, discounts)</label>
-          <input type="number" id="newTotal" value="120000" step="1000" min="0" />
-          <div class="hint">Used for real payback calculation.</div>
+        <div class="section-title">2. Material Efficiency (The Joker)</div>
+        <div class="input-group" style="margin-bottom: 15px;">
+            <label>Annual Material Spend (Total Budget)</label>
+            <div class="input-wrapper"><span>$</span><input type="number" id="matSpend" value="4000000" oninput="calc()"></div>
         </div>
-        <div class="field">
-          <label>Annualize over (years)</label>
-          <input type="number" id="life" value="5" step="1" min="1" />
-          <div class="hint">Used for CFO framing (annualized new system cost).</div>
-        </div>
-
-        <div class="secTitle">
-          <span>ROI engines (toggle what customer agrees with)</span>
-          <span class="tag">Portfolio</span>
-        </div>
-
-        <!-- Service module -->
-        <div class="mod">
-          <div class="modHead">
-            <div class="modTitle">Service calls and parts</div>
-            <div class="modMeta">
-              <span class="chip">Hard data</span>
-              <label class="tog chip"><input type="checkbox" id="m_service" checked /> Include</label>
+        <div class="input-row">
+            <div class="input-group">
+                <label>Waste Reduction %</label>
+                <div class="input-wrapper"><span>%</span><input type="number" id="wastePct" value="1.5" step="0.1" oninput="calc()"></div>
             </div>
-          </div>
-          <div class="row">
-            <div style="flex:1">
-              <label>Calls per year</label>
-              <input type="number" id="calls" value="12" min="0" step="1" />
+            <div class="input-group">
+                <label>Re-print Reduction (Material Only)</label>
+                <div class="input-wrapper"><span>%</span><input type="number" id="reprintPct" value="0.5" step="0.1" oninput="calc()"></div>
             </div>
-            <div style="flex:1">
-              <label>Avg cost per call</label>
-              <input type="number" id="callCost" value="800" min="0" step="50" />
-            </div>
-          </div>
-          <div class="hint">Use actual logs. If in doubt, understate and keep credibility.</div>
         </div>
 
-        <!-- Downtime module -->
-        <div class="mod" style="margin-top:10px">
-          <div class="modHead">
-            <div class="modTitle">Unplanned downtime</div>
-            <div class="modMeta">
-              <span class="chip">Hard data</span>
-              <label class="tog chip"><input type="checkbox" id="m_downtime" checked /> Include</label>
+        <div class="section-title">3. Investment (New System)</div>
+        <div class="input-row">
+            <div class="input-group">
+                <label>Total System Price</label>
+                <div class="input-wrapper"><span>$</span><input type="number" id="sysPrice" value="120000" oninput="calc()"></div>
             </div>
-          </div>
-          <div class="row">
-            <div style="flex:1">
-              <label>Downtime hours per month</label>
-              <input type="number" id="dtHours" value="4" min="0" step="1" />
+            <div class="input-group">
+                <label>Lifespan (Years)</label>
+                <div class="input-wrapper"><span>Y</span><input type="number" id="years" value="5" oninput="calc()"></div>
             </div>
-            <div style="flex:1">
-              <label>Cost per hour</label>
-              <input type="number" id="costHour" value="250" min="0" step="10" />
-            </div>
-          </div>
-          <div class="hint">This converts pain to money instantly.</div>
         </div>
-
-        <!-- Waste module -->
-        <div class="mod" style="margin-top:10px">
-          <div class="modHead">
-            <div class="modTitle">Waste reduction (materials)</div>
-            <div class="modMeta">
-              <span class="chip" style="color:#ffe9b0;border-color:rgba(255,204,77,.35);background:rgba(255,204,77,.10)">Assumption</span>
-              <label class="tog chip"><input type="checkbox" id="m_waste" checked /> Include</label>
-            </div>
-          </div>
-          <div class="row">
-            <div style="flex:1">
-              <label>Annual material spend</label>
-              <input type="number" id="matSpend" value="12000000" min="0" step="1000" />
-            </div>
-            <div style="flex:1">
-              <label>Reduction (%)</label>
-              <input type="number" id="wastePct" value="0.5" min="0" step="0.1" />
-            </div>
-          </div>
-          <div class="hint">Model as “current waste we can reduce”. Keep it defensible (0.3–1.0%).</div>
-        </div>
-
-        <!-- Overprint module -->
-        <div class="mod" style="margin-top:10px">
-          <div class="modHead">
-            <div class="modTitle">Overprint reduction</div>
-            <div class="modMeta">
-              <span class="chip" style="color:#ffe9b0;border-color:rgba(255,204,77,.35);background:rgba(255,204,77,.10)">Assumption</span>
-              <label class="tog chip"><input type="checkbox" id="m_overprint" /> Include</label>
-            </div>
-          </div>
-          <div class="row">
-            <div style="flex:1">
-              <label>Typical overprint today (%)</label>
-              <input type="number" id="overprintPct" value="10" min="0" step="0.5" />
-            </div>
-            <div style="flex:1">
-              <label>Reduction of overprint (%)</label>
-              <input type="number" id="overprintReduce" value="20" min="0" step="1" />
-            </div>
-          </div>
-          <div class="hint">Example: 10% overprint, reduce it by 20% -> saves 2% of relevant material.</div>
-        </div>
-
-        <!-- Reprints module -->
-        <div class="mod" style="margin-top:10px">
-          <div class="modHead">
-            <div class="modTitle">Reprints reduction</div>
-            <div class="modMeta">
-              <span class="chip" style="color:#ffe9b0;border-color:rgba(255,204,77,.35);background:rgba(255,204,77,.10)">Assumption</span>
-              <label class="tog chip"><input type="checkbox" id="m_reprints" /> Include</label>
-            </div>
-          </div>
-          <div class="row">
-            <div style="flex:1">
-              <label>Annual reprint material cost</label>
-              <input type="number" id="reprintCost" value="80000" min="0" step="1000" />
-            </div>
-            <div style="flex:1">
-              <label>Reduction (%)</label>
-              <input type="number" id="reprintReduce" value="75" min="0" step="1" />
-            </div>
-          </div>
-          <div class="hint">If you have data: use it. If not, keep conservative and let customer confirm.</div>
-        </div>
-
-        <!-- Capacity module -->
-        <div class="mod" style="margin-top:10px">
-          <div class="modHead">
-            <div class="modTitle">Capacity release (only if they are constrained)</div>
-            <div class="modMeta">
-              <span class="chip" style="color:#ffe9b0;border-color:rgba(255,204,77,.35);background:rgba(255,204,77,.10)">Assumption</span>
-              <label class="tog chip"><input type="checkbox" id="m_capacity" /> Include</label>
-            </div>
-          </div>
-          <div class="row">
-            <div style="flex:1">
-              <label>Extra annual gross profit (from added capacity)</label>
-              <input type="number" id="capacityGP" value="40000" min="0" step="1000" />
-            </div>
-            <div style="flex:1">
-              <label>Confidence</label>
-              <select id="capConf">
-                <option value="0.5">Low</option>
-                <option value="0.8" selected>Medium</option>
-                <option value="1.0">High</option>
-              </select>
-            </div>
-          </div>
-          <div class="hint">Use ONLY if they already have overflow, overtime, or lost jobs.</div>
-        </div>
-
-        <div class="actions">
-          <button id="calcBtn">Calculate</button>
-          <button class="secondary" id="resetBtn">Reset</button>
-          <button class="secondary" id="copyBtn">Copy summary</button>
-          <button class="secondary" id="printBtn">Print</button>
-        </div>
-
-        <div class="mini">
-          Positioning: “We are not selling a new machine. We are stopping a recurring annual loss.” Use CFO view first.
-        </div>
-      </div>
-
-      <!-- OUTPUTS -->
-      <div class="card">
-        <h2>Results</h2>
-
-        <div class="kpis">
-          <div class="kpi">
-            <div class="t">Current bleeding (annual)</div>
-            <div class="v bad" id="bleedAnnual">-</div>
-          </div>
-          <div class="kpi">
-            <div class="t">New system (annualized)</div>
-            <div class="v blue" id="newAnnualized">-</div>
-          </div>
-          <div class="kpi">
-            <div class="t">Cost of inaction (annual)</div>
-            <div class="v bad" id="inaction">-</div>
-          </div>
-          <div class="kpi">
-            <div class="t">Payback (months)</div>
-            <div class="v good" id="payback">-</div>
-          </div>
-        </div>
-
-        <div class="bigLine" id="bottomLine">Enter inputs and click Calculate.</div>
-
-        <div class="secTitle">
-          <span>Engine breakdown (annual)</span>
-          <span class="tag">What drives the case</span>
-        </div>
-
-        <div id="breakdown"></div>
-
-        <div style="margin-top:12px">
-          <label style="display:block;margin:0 0 8px;color:#dbeafe;font-size:13px">Customer-ready summary</label>
-          <textarea id="summary" readonly></textarea>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <script>
-    const $ = (id) => document.getElementById(id);
+    <div class="visuals-panel">
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Total Annual Waste</div>
+                <div class="kpi-value red" id="valWaste">$0</div>
+                <div style="font-size:11px; color:#94a3b8">Your cost to stay put</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">System Annual Cost</div>
+                <div class="kpi-value blue" id="valSys">$0</div>
+                <div style="font-size:11px; color:#94a3b8">Amortized over lifespan</div>
+            </div>
+        </div>
 
-    const fmt = (n, cur) => {
-      if (!isFinite(n)) return "-";
-      const sign = n < 0 ? "-" : "";
-      const abs = Math.abs(n);
-      return sign + cur + abs.toLocaleString(undefined, { maximumFractionDigits: 0 });
-    };
+        <div class="chart-box">
+            <div class="bar-group">
+                <div class="bar-label"><span>Cost of Inaction (Waste)</span> <span id="lblWaste">$0</span></div>
+                <div class="bar-track"><div class="bar-fill bg-red" id="barWaste"></div></div>
+            </div>
+            <div class="bar-group">
+                <div class="bar-label"><span>Cost of Upgrade</span> <span id="lblSys">$0</span></div>
+                <div class="bar-track"><div class="bar-fill bg-blue" id="barSys"></div></div>
+            </div>
+            <div style="text-align:center; margin-top:15px; font-weight:700; color:var(--danger)">
+                ANNUAL LOSS: <span id="valLoss">$0</span>
+            </div>
+        </div>
 
-    function annualizedNew(){
-      const total = Math.max(0, parseFloat($("newTotal").value) || 0);
-      const life  = Math.max(1, parseFloat($("life").value) || 1);
-      return { total, life, annual: total / life };
+        <div class="roi-section">
+            <div class="roi-header">
+                <span class="roi-title">⚡ INVESTMENT RECOVERY</span>
+                <span style="font-size:12px; color:var(--text-light)">Based on waste savings</span>
+            </div>
+            <div class="roi-metrics">
+                <div class="roi-metric">
+                    <div>PAYBACK PERIOD</div>
+                    <div id="valPayback">0 Months</div>
+                </div>
+                <div class="roi-metric">
+                    <div>5-YEAR NET SAVINGS</div>
+                    <div id="val5Year" style="color:var(--success)">$0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const fmt = (n) => '$' + n.toLocaleString('en-US', {maximumFractionDigits:0});
+
+    function calc() {
+        // Inputs
+        const calls = +document.getElementById('calls').value;
+        const callCost = +document.getElementById('callCost').value;
+        const downHrs = +document.getElementById('downHrs').value;
+        const hrCost = +document.getElementById('hrCost').value;
+        const matSpend = +document.getElementById('matSpend').value;
+        const wastePct = +document.getElementById('wastePct').value;
+        const reprintPct = +document.getElementById('reprintPct').value;
+        const sysPrice = +document.getElementById('sysPrice').value;
+        const years = +document.getElementById('years').value;
+
+        // Calculations
+        const annualService = calls * callCost;
+        const annualDowntime = downHrs * hrCost * 12;
+        
+        // Material Waste Savings
+        const annualMatWaste = matSpend * (wastePct / 100);
+        // Reprint Savings (Material only for simplicity, but huge impact)
+        const annualReprintWaste = matSpend * (reprintPct / 100);
+        
+        const totalAnnualWaste = annualService + annualDowntime + annualMatWaste + annualReprintWaste;
+        const annualSysCost = sysPrice / years;
+        const netAnnualLoss = totalAnnualWaste - annualSysCost;
+
+        // ROI Calculations
+        // Payback in Months = (Total System Price / Total Annual Savings) * 12
+        let paybackMonths = (sysPrice / totalAnnualWaste) * 12;
+        if(paybackMonths < 0) paybackMonths = 999;
+        
+        // 5 Year Net Savings = (Total Annual Waste * 5) - Total System Price
+        const fiveYearSavings = (totalAnnualWaste * 5) - sysPrice;
+
+        // Render Top KPIs
+        document.getElementById('valWaste').innerText = fmt(totalAnnualWaste);
+        document.getElementById('valSys').innerText = fmt(annualSysCost);
+        
+        // Render Bars
+        document.getElementById('lblWaste').innerText = fmt(totalAnnualWaste);
+        document.getElementById('lblSys').innerText = fmt(annualSysCost);
+        document.getElementById('valLoss').innerText = fmt(netAnnualLoss);
+        
+        const max = Math.max(totalAnnualWaste, annualSysCost) * 1.1;
+        document.getElementById('barWaste').style.width = (totalAnnualWaste/max*100) + '%';
+        document.getElementById('barSys').style.width = (annualSysCost/max*100) + '%';
+
+        // Render ROI
+        document.getElementById('valPayback').innerText = paybackMonths.toFixed(1) + " Months";
+        document.getElementById('val5Year').innerText = fmt(fiveYearSavings);
     }
+    calc();
+</script>
 
-    function calc(){
-      const cur = $("currency").value;
-      const years = parseInt($("years").value, 10);
-
-      // Investment
-      const inv = annualizedNew();
-
-      // Engines
-      const items = [];
-
-      // 1) Service
-      if ($("m_service").checked){
-        const calls = Math.max(0, parseFloat($("calls").value) || 0);
-        const cost = Math.max(0, parseFloat($("callCost").value) || 0);
-        items.push({ name:"Service calls & parts", type:"hard", value: calls * cost });
-      }
-
-      // 2) Downtime
-      if ($("m_downtime").checked){
-        const h = Math.max(0, parseFloat($("dtHours").value) || 0);
-        const c = Math.max(0, parseFloat($("costHour").value) || 0);
-        items.push({ name:"Unplanned downtime", type:"hard", value: (h * c) * 12 });
-      }
-
-      // 3) Waste reduction (materials)
-      if ($("m_waste").checked){
-        const spend = Math.max(0, parseFloat($("matSpend").value) || 0);
-        const pct = Math.max(0, parseFloat($("wastePct").value) || 0);
-        items.push({ name:"Material waste reduction", type:"assume", value: spend * (pct/100) });
-      }
-
-      // 4) Overprint reduction -> savings = material spend * (overprint% * reduction%)
-      if ($("m_overprint").checked){
-        const spend = Math.max(0, parseFloat($("matSpend").value) || 0);
-        const op = Math.max(0, parseFloat($("overprintPct").value) || 0) / 100;
-        const red = Math.max(0, parseFloat($("overprintReduce").value) || 0) / 100;
-        const savedPct = op * red; // e.g. 10% * 20% = 2%
-        items.push({ name:"Overprint reduction", type:"assume", value: spend * savedPct });
-      }
-
-      // 5) Reprints reduction
-      if ($("m_reprints").checked){
-        const base = Math.max(0, parseFloat($("reprintCost").value) || 0);
-        const red = Math.max(0, parseFloat($("reprintReduce").value) || 0) / 100;
-        items.push({ name:"Reprints reduction", type:"assume", value: base * red });
-      }
-
-      // 6) Capacity release (gross profit)
-      if ($("m_capacity").checked){
-        const gp = Math.max(0, parseFloat($("capacityGP").value) || 0);
-        const conf = Math.max(0, parseFloat($("capConf").value) || 0);
-        items.push({ name:"Capacity release (gross profit)", type:"assume", value: gp * conf });
-      }
-
-      // Sum
-      const bleeding = items.reduce((a,i)=>a+i.value,0);
-      const netAnnual = bleeding - inv.annual; // cost of inaction per year (if positive)
-
-      // Payback (real)
-      let paybackTxt = "N/A";
-      if (netAnnual > 0 && inv.total > 0){
-        const months = (inv.total / netAnnual) * 12;
-        paybackTxt = isFinite(months) ? months.toFixed(1) : "N/A";
-      } else if (netAnnual <= 0){
-        paybackTxt = "No case yet";
-      }
-
-      $("bleedAnnual").textContent = fmt(bleeding, cur);
-      $("newAnnualized").textContent = fmt(inv.annual, cur);
-      $("inaction").textContent = fmt(netAnnual, cur);
-      $("payback").textContent = paybackTxt;
-
-      // Bottom line
-      if (netAnnual > 0){
-        $("bottomLine").innerHTML =
-          `Bottom line: you are bleeding about <b class="bad">${fmt(bleeding, cur)}</b> per year.
-           Annualized upgrade cost is <b class="blue">${fmt(inv.annual, cur)}</b>.
-           Not upgrading is a recurring annual loss of <b class="bad">${fmt(netAnnual, cur)}</b>.
-           Total payback is <b class="good">${paybackTxt} months</b>.`;
-      } else {
-        $("bottomLine").innerHTML =
-          `At current inputs, the annual loss is not higher than the annualized upgrade cost.
-           Either the upgrade price is too high, or the current loss is understated (service, downtime, waste).`;
-      }
-
-      // Breakdown UI
-      const bd = $("breakdown");
-      bd.innerHTML = "";
-      items
-        .sort((a,b)=>b.value-a.value)
-        .forEach(i=>{
-          const div = document.createElement("div");
-          div.className = "bdRow";
-          div.innerHTML = `<span>${i.name} ${i.type==="hard" ? "(hard data)" : "(assumption)"}</span><b>${fmt(i.value, cur)}</b>`;
-          bd.appendChild(div);
-        });
-
-      // Summary
-      const lines = [];
-      lines.push(`Next-Gen Upgrade ROI Summary`);
-      lines.push(`Horizon: ${years} years`);
-      lines.push(``);
-      lines.push(`INVESTMENT`);
-      lines.push(`- Total upgrade cost: ${fmt(inv.total, cur)}`);
-      lines.push(`- Annualized (${inv.life} years): ${fmt(inv.annual, cur)}`);
-      lines.push(``);
-      lines.push(`ROI ENGINES (annual)`);
-      for (const i of items){
-        lines.push(`- ${i.name}: ${fmt(i.value, cur)} ${i.type==="hard" ? "[HARD DATA]" : "[ASSUMPTION]"}`);
-      }
-      lines.push(``);
-      lines.push(`CURRENT BLEEDING (annual): ${fmt(bleeding, cur)}`);
-      lines.push(`COST OF INACTION (annual): ${fmt(netAnnual, cur)}`);
-      lines.push(`PAYBACK: ${paybackTxt}`);
-      lines.push(``);
-      lines.push(`Closing line: This is not about spending money. It is about stopping a recurring annual loss.`);
-      $("summary").value = lines.join("\n");
-    }
-
-    function setView(){
-      const v = $("view").value;
-
-      // hide/show assumption modules depending on view
-      const assumeIds = ["m_waste","m_overprint","m_reprints","m_capacity"];
-      const hardIds = ["m_service","m_downtime"];
-
-      const modules = document.querySelectorAll(".mod");
-      modules.forEach(m=>m.classList.remove("hidden"));
-
-      if (v === "cfo"){
-        // CFO: show investment + totals, but hide noisy assumptions modules UI (still can be included via toggle)
-        // We'll hide capacity, reprints, overprint modules to keep it clean; waste can stay as it is materials-driven.
-        modules[4].classList.add("hidden"); // Overprint module
-        modules[5].classList.add("hidden"); // Reprints module
-        modules[6].classList.add("hidden"); // Capacity module
-      } else if (v === "service"){
-        // Service: focus on service + downtime
-        modules[2].classList.add("hidden"); // Waste
-        modules[3].classList.add("hidden"); // Overprint
-        modules[4].classList.add("hidden"); // Reprints
-        modules[5].classList.add("hidden"); // Capacity
-      } else if (v === "plant"){
-        // Plant: show downtime + waste + reprints + overprint, hide service cost if needed
-        // Keep service visible because it often matters, but could hide if you want.
-      } else {
-        // full: show all
-      }
-    }
-
-    $("calcBtn").addEventListener("click", calc);
-    $("resetBtn").addEventListener("click", () => location.reload());
-    $("copyBtn").addEventListener("click", async () => {
-      if (!$("summary").value.trim()) calc();
-      try{
-        await navigator.clipboard.writeText($("summary").value);
-        $("copyBtn").textContent = "Copied";
-        setTimeout(()=> $("copyBtn").textContent = "Copy summary", 900);
-      }catch(e){
-        alert("Copy failed. Please copy manually from the summary box.");
-      }
-    });
-    $("printBtn").addEventListener("click", () => window.print());
-    $("view").addEventListener("change", setView);
-
-    setView();
-  </script>
 </body>
 </html>
